@@ -28,11 +28,11 @@ func createEvent(c *gin.Context) {
 
 }
 
-func eventRoutes(route *gin.RouterGroup) {
-	eventRouter := route.Group("/events")
+func eventsRoutes(route *gin.RouterGroup) {
+	eventsRouter := route.Group("/events")
 
 	{
-		eventRouter.GET("/", getEvents)
-		eventRouter.POST("/", createEvent)
+		eventsRouter.GET("/", getEvents)
+		eventsRouter.POST("/", createEvent)
 	}
 }
