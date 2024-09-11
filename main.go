@@ -1,9 +1,18 @@
 package main
 
-import "fmt"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/mhmdhalawi/events-booking/routes"
+)
 
 func main() {
 
-	fmt.Println("Hello World")
+	server := gin.Default()
+	server.SetTrustedProxies([]string{"localhost"})
+
+	router := server.Group("/")
+	routes.AddRoutes(router)
+
+	server.Run("localhost:9000")
 
 }
