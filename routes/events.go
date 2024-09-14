@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mhmdhalawi/events-booking/middlewares"
 	"github.com/mhmdhalawi/events-booking/models"
-	"github.com/mhmdhalawi/events-booking/utils"
 )
 
 func getEvents(c *gin.Context) {
@@ -24,25 +24,13 @@ func getEvents(c *gin.Context) {
 
 func createEvent(c *gin.Context) {
 
-	token := c.GetHeader("Authorization")
-
-	if token == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
-		return
-	}
-
-	userID, err := utils.ValidateToken(token)
-
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
-		return
-	}
+	userID := c.GetInt64("userID")
 
 	var event models.Event
 
 	if c.ShouldBindJSON(&event) == nil {
 		event.UserID = userID
-		err = event.Save()
+		err := event.Save()
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot create event"})
@@ -85,10 +73,16 @@ func updateEvent(c *gin.Context) {
 		return
 	}
 
+	userID := c.GetInt64("userID")
 	event, err := models.GetEventByID(eventID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot get event"})
+		return
+	}
+
+	if event.UserID != userID {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
 		return
 	}
 
@@ -113,11 +107,16 @@ func deleteEvent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not parse event id."})
 		return
 	}
-
+	userID := c.GetInt64("userID")
 	event, err := models.GetEventByID(eventID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot get event"})
+		return
+	}
+
+	if event.UserID != userID {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
 		return
 	}
 
@@ -132,13 +131,17 @@ func deleteEvent(c *gin.Context) {
 }
 
 func eventsRoutes(route *gin.RouterGroup) {
+
 	eventsRouter := route.Group("/events")
+
+	protectedEventsRouter := route.Group("/events")
+	protectedEventsRouter.Use(middlewares.Authenticate)
 
 	{
 		eventsRouter.GET("", getEvents)
-		eventsRouter.POST("", createEvent)
 		eventsRouter.GET("/:id", getEvent)
-		eventsRouter.PUT("/:id", updateEvent)
-		eventsRouter.DELETE("/:id", deleteEvent)
+		protectedEventsRouter.POST("", createEvent)
+		protectedEventsRouter.PUT("/:id", updateEvent)
+		protectedEventsRouter.DELETE("/:id", deleteEvent)
 	}
 }
