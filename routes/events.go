@@ -130,6 +130,58 @@ func deleteEvent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "event deleted successfully"})
 }
 
+func registerForEvent(c *gin.Context) {
+	userID := c.GetInt64("userID")
+	eventID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "could not parse event id."})
+		return
+	}
+
+	event, err := models.GetEventByID(eventID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot register for event"})
+		return
+	}
+
+	err = event.Register(userID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot register for event"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "registered for event successfully"})
+}
+
+func cancelRegistration(c *gin.Context) {
+	userID := c.GetInt64("userID")
+	eventID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "could not parse event id."})
+		return
+	}
+
+	event, err := models.GetEventByID(eventID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot cancel registration"})
+		return
+	}
+
+	err = event.Unregister(userID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot cancel registration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "registration canceled successfully"})
+}
+
 func eventsRoutes(route *gin.RouterGroup) {
 
 	eventsRouter := route.Group("/events")
@@ -140,8 +192,12 @@ func eventsRoutes(route *gin.RouterGroup) {
 	{
 		eventsRouter.GET("", getEvents)
 		eventsRouter.GET("/:id", getEvent)
+
 		protectedEventsRouter.POST("", createEvent)
 		protectedEventsRouter.PUT("/:id", updateEvent)
 		protectedEventsRouter.DELETE("/:id", deleteEvent)
+		protectedEventsRouter.POST("/:id/register", registerForEvent)
+		protectedEventsRouter.DELETE("/:id/register", cancelRegistration)
+
 	}
 }
