@@ -26,11 +26,19 @@ func (u *User) Save() error {
 
 	hashedPassword := utils.HashPassword(u.Password)
 
-	_, err = stmt.Exec(u.Email, hashedPassword)
+	result, err := stmt.Exec(u.Email, hashedPassword)
 
 	if err != nil {
 		return err
 	}
+
+	id, err := result.LastInsertId()
+
+	if err != nil {
+		return err
+	}
+
+	u.ID = id
 
 	return err
 
@@ -49,6 +57,5 @@ func (u *User) FindByEmail() (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &user, err
 }

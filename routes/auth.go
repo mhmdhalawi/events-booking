@@ -20,7 +20,14 @@ func signup(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusCreated, gin.H{"message": "user created"})
+		token, err := utils.GenerateToken(user.Email, user.ID)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot create user"})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{"message": "user created", "token": token})
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot create user"})
 	}
@@ -42,7 +49,14 @@ func login(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "logged in"})
+		token, err := utils.GenerateToken(userDB.Email, userDB.ID)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot login"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "logged in", "token": token})
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot login"})
 	}

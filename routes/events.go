@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mhmdhalawi/events-booking/models"
+	"github.com/mhmdhalawi/events-booking/utils"
 )
 
 func getEvents(c *gin.Context) {
@@ -23,10 +24,25 @@ func getEvents(c *gin.Context) {
 
 func createEvent(c *gin.Context) {
 
+	token := c.GetHeader("Authorization")
+
+	if token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
+		return
+	}
+
+	userID, err := utils.ValidateToken(token)
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
+		return
+	}
+
 	var event models.Event
 
 	if c.ShouldBindJSON(&event) == nil {
-		err := event.Save()
+		event.UserID = userID
+		err = event.Save()
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot create event"})
@@ -34,6 +50,7 @@ func createEvent(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusCreated, event)
+
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "cannot create event"})
 	}
